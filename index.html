@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Shopify File Upload</title>
+  <style>
+    body {
+      font-family: "Segoe UI", sans-serif;
+      background: #f6f9fc;
+      padding: 40px;
+      text-align: center;
+    }
+
+    h2 {
+      margin-bottom: 20px;
+      color: #333;
+    }
+
+    .upload-box {
+      background: white;
+      border: 2px dashed #aaa;
+      padding: 40px 20px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: 0.2s ease;
+      max-width: 400px;
+      margin: 0 auto;
+    }
+
+    .upload-box:hover {
+      border-color: #1475cf;
+    }
+
+    .upload-box img {
+      max-width: 180px;
+      height: auto;
+      margin-bottom: 10px;
+    }
+
+    #fileInput {
+      display: none;
+    }
+
+    button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      background: #1475cf;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      background: #aaa;
+      cursor: not-allowed;
+    }
+
+    .delete-btn {
+      color: red;
+      font-size: 14px;
+      cursor: pointer;
+      display: block;
+      margin-top: 10px;
+    }
+
+    #result {
+      margin-top: 20px;
+      font-size: 14px;
+    }
+
+    a {
+      color: #1475cf;
+      text-decoration: none;
+    }
+  </style>
+</head>
+
+<body>
+  <h2>Cloud Base Asset</h2>
+
+  <form id="uploadForm" enctype="multipart/form-data">
+    <div class="upload-box" id="uploadArea">
+      <p id="placeholder">
+        📁 Click here to choose a file<br>
+        <small>Only images (jpg, png, etc.) are previewed</small>
+      </p>
+      <img id="previewImage" src="" alt="" style="display: none;" />
+      <span class="delete-btn" id="deleteBtn" style="display: none;">🗑 Remove</span>
+      <input type="file" name="file" id="fileInput" required />
+    </div>
+
+    <button type="submit" id="submitBtn" disabled>Upload</button>
+  </form>
+
+  <p id="result"></p>
+
+  <script>
+    const fileInput = document.getElementById("fileInput");
+    const uploadArea = document.getElementById("uploadArea");
+    const previewImage = document.getElementById("previewImage");
+    const deleteBtn = document.getElementById("deleteBtn");
+    const placeholder = document.getElementById("placeholder");
+    const submitBtn = document.getElementById("submitBtn");
+    const result = document.getElementById("result");
+
+    // Trigger input when area clicked
+    uploadArea.addEventListener("click", () => {
+      fileInput.click();
+    });
+
+    // Preview
+    fileInput.addEventListener("change", () => {
+      const file = fileInput.files[0];
+      if (file) {
+        if (file.type.startsWith("image/")) {
+          previewImage.src = URL.createObjectURL(file);
+          previewImage.style.display = "block";
+        } else {
+          previewImage.style.display = "none";
+        }
+
+        placeholder.style.display = "none";
+        deleteBtn.style.display = "inline";
+        submitBtn.disabled = false;
+      }
+    });
+
+    // Delete/reset
+    deleteBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      fileInput.value = "";
+      previewImage.src = "";
+      previewImage.style.display = "none";
+      placeholder.style.display = "block";
+      deleteBtn.style.display = "none";
+      submitBtn.disabled = true;
+    });
+
+    // Upload
+    document.getElementById("uploadForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      if (!fileInput.files.length) return;
+
+      const formData = new FormData();
+      formData.append("file", fileInput.files[0]);
+
+      submitBtn.disabled = true;
+      result.innerText = "Uploading...";
+
+      try {
+        const response = await fetch("http://localhost:3000/upload", {
+          method: "POST",
+          body: formData,
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          result.innerHTML = `
+            ✅ File uploaded to Shopify!<br>
+            <a href="${data.resourceUrl}" target="_blank">${data.resourceUrl}</a>
+          `;
+        } else {
+          result.innerText = "❌ Error: " + (data.error || "Unknown error");
+        }
+      } catch (err) {
+        result.innerText = "❌ Network Error: " + err.message;
+      } finally {
+        submitBtn.disabled = false;
+      }
+    });
+  </script>
+</body>
+
+</html>
