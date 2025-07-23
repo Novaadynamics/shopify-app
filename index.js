@@ -18,6 +18,8 @@ const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 
+app.use(express.static(path.join(__dirname, 'public')));
+
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         cb(null, 'uploads/');
@@ -40,6 +42,12 @@ const shopify = shopifyApi({
     apiVersion: LATEST_API_VERSION,
     isCustomStoreApp: true,
 });
+
+app.get('/', (req, res) => {
+    // res.send('HELO')
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
 
 app.post('/upload', upload.single('file'), async (req, res) => {
     try {
